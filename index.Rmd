@@ -9,7 +9,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE,error = FALSE, warning = FALSE)
 library(ggplot2)
 library(scales)
 library(RSQLite)
