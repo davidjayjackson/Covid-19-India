@@ -19,7 +19,7 @@ library(timetk)
 theme_set(theme_linedraw())
 ```
 
-## India's Battle with COVID-19
+## India's Battle with COVID-19 (Rolling 365 Days)
 
 ```{r}
 rm(list=ls())
@@ -27,15 +27,16 @@ source("../DATA/movavg.R")
 
 db <- dbConnect(SQLite(), dbname="../COVID-19-DB/OURWORLD.sqlite3")
 df <- dbGetQuery(db,"select * from OWID")
-df <- subset(df,location =="India"  )
 df$date <- as.Date(df$date)
+df <- subset(df,location =="India" & date >=Sys.Date() -365 )
+
 sum(df$new_cases,na.rm = TRUE)
 sum(df$new_deaths,na.rm=TRUE)
 
 ```
 ```{r}
-US <- subset(df,date >=Sys.Date() -365)
-US <- US[order(US$date,decreasing = TRUE),]
+
+US <- df[order(df$date,decreasing = TRUE),]
 US$MAC <- ma(US$new_cases,7,centre=TRUE)
 US$MAD <- ma(US$new_deaths,7,centre=TRUE)
 US$Rate <- US$new_deaths/US$new_cases
