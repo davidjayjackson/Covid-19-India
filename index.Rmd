@@ -34,6 +34,7 @@ sum(df$new_cases,na.rm = TRUE)
 sum(df$new_deaths,na.rm=TRUE)
 
 ```
+
 ```{r}
 
 US <- df[order(df$date,decreasing = TRUE),]
@@ -74,7 +75,6 @@ daily_new_deaths <-ggplot(US) +
 
 ```
 
-
 ```{r}
 # USA <- subset(US,date >="2020-06-01")
 # ggplot(USA) + # geom_line(aes(x=date,y=new_cases,col="Daily new_cases")) +
@@ -84,6 +84,7 @@ daily_new_deaths <-ggplot(US) +
 #    scale_alpha_date()
 #   
 ```
+
 ```{r}
 # ggplot(USA) + # geom_line(aes(x=date,y=new_deaths,col="Daily new_deaths")) +
 #   labs(title="COVID-19 Deaths by Date (since Jun. 1, 2020)") + ylim(0,200) +
@@ -101,6 +102,7 @@ US$Weekly <- as.Date(cut(US$date,
   start.on.monday = FALSE))
 
 ```
+
 ```{r}
 Weekly_new_cases <- aggregate(new_cases~Weekly,US,FUN=sum)
 Weekly_new_deaths <- aggregate(new_deaths~Weekly,US,FUN=sum)
@@ -108,6 +110,7 @@ Weekly_new_cases$DRate <- Weekly_new_deaths$new_deaths/Weekly_new_cases$new_case
 Weekly_new_cases$LivedSaved <- Weekly_new_cases$new_cases * (max(Weekly_new_cases$DRate) - Weekly_new_cases$DRate) 
 
 ```
+
 ```{r}
 ggplot(Weekly_new_cases) + geom_col(aes(x=Weekly,y=new_cases)) + 
   labs(title="Weekly Cases ",x="Date date", y="Weekly new_cases") +
@@ -117,12 +120,9 @@ ggplot(Weekly_new_deaths) + geom_col(aes(x=Weekly,y=new_deaths)) +
   labs(title="Weekly Deaths",x="Date date", y="Weekly new_deaths") +
    ylim(0,8000) + 
   scale_y_continuous(labels = comma)
-``` 
-
+```
 
 #### Monthly new_cases and new_deaths
-
-
 
 ```{r}
 
@@ -131,6 +131,7 @@ Monthly_new_deaths <- aggregate(new_deaths~Monthly,US,FUN=sum)
 Monthly_new_cases$DRate <- Monthly_new_deaths$new_deaths/Monthly_new_cases$new_cases
 Monthly_new_cases$LivedSaved <- Monthly_new_cases$new_cases * (max(Monthly_new_cases$DRate) - Monthly_new_cases$DRate) * 100
 ```
+
 ```{r}
 ggplot(Monthly_new_cases) + geom_col(aes(x=Monthly,y=new_cases)) +
   labs(title="Monthly Cases") +
