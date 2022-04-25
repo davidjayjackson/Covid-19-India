@@ -2,27 +2,24 @@
 title: 'India: Battle With COVID-19'
 author: "David Jackson"
 date: "`r Sys.time()`"
-output: 
-  html_document:
+output:
+   html_document:
     fig_width: 9
     fig_height: 5
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(
-	echo = FALSE,
-	error = FALSE,
-	message = FALSE
-)
+knitr::opts_chunk$set(echo = FALSE,error = FALSE, warning = FALSE)
 library(ggplot2)
 library(scales)
 library(RSQLite)
 library(plotly)
 library(forecast)
+library(timetk)
 theme_set(theme_linedraw())
 ```
 
-## Brazil's Battle with COVID-19
+## India's Battle with COVID-19 (Rolling 365 Days)
 
 ```{r}
 rm(list=ls())
@@ -30,19 +27,17 @@ source("../DATA/movavg.R")
 
 db <- dbConnect(SQLite(), dbname="../COVID-19-DB/OURWORLD.sqlite3")
 df <- dbGetQuery(db,"select * from OWID")
-df <- subset(df,location =="India" &  date >=Sys.Date() - 365 )
-
-df$new_cases <- as.numeric(df$new_cases)
-df$new_deaths <- as.numeric(df$new_deaths)
 df$date <- as.Date(df$date)
+df <- subset(df,location =="India" & date >=Sys.Date() -365 )
+
 sum(df$new_cases,na.rm = TRUE)
 sum(df$new_deaths,na.rm=TRUE)
 
 ```
+
 ```{r}
-# US <- subset(df,date >="2020-04-01" & new_cases >=1)
-US <- subset(df,date >=Sys.Date() - 365)
-US <- US[order(US$date,decreasing = TRUE),]
+
+US <- df[order(df$date,decreasing = TRUE),]
 US$MAC <- ma(US$new_cases,7,centre=TRUE)
 US$MAD <- ma(US$new_deaths,7,centre=TRUE)
 US$Rate <- US$new_deaths/US$new_cases
@@ -55,29 +50,46 @@ df$Year <- lubridate::year(df$date)
 df$Year <- as.factor(df$Year)
 ggplot(df) + geom_col(aes(x=Year,y=new_cases)) +
   labs(title = "Covid-19 Cases By Year") +
-   scale_y_continuous(labels = comma_format())
+  scale_y_continuous(labels = comma)
 
 ggplot(df) + geom_col(aes(x=Year,y=new_deaths)) +
   labs(title = "Covid-19 Deaths By Year") +
   scale_y_continuous(labels = comma)
 ```
 
-
-### Plot of Daily Cases and Deaths
+### Plot of Daily new_cases and new_deaths
 
 ```{r}
-daily_new_deaths <- ggplot(US) + 
-  labs(title="COVID-19 Cases by Date",col="CAses",y="Cases")  +
-  geom_line(aes(x=date,y=MAC,col="Mov. Average"),lwd=1) 
-    ggplotly(daily_new_deaths)
+daily_new_cases <-ggplot(US) + 
+  labs(title="COVID-19 Cases by Date",y="Cases") +
+    geom_line(aes(x=date,y=MAC,col="Mov Average")) +
+  scale_y_continuous(labels = comma)
+ggplotly(daily_new_cases)
+
+
+daily_new_deaths <-ggplot(US) + 
+  labs(title="COVID-19 Deaths  by Date",col="Deaths",y="Deaths") + ylim(0,10000) +
+  geom_line(aes(x=date,y=MAD,col="Mov. Average")) +
+  scale_y_continuous(labels = comma)
+ ggplotly(daily_new_deaths)
 
 ```
-```{r}
-daily_new_deaths <- ggplot(US) + 
-  labs(title="COVID-19 Deaths by Date",col="Deaths",y="Deaths")  +
-  geom_line(aes(x=date,y=MAD,col="Mov. Average"),lwd=1) 
-   ggplotly(daily_new_deaths)
 
+```{r}
+# USA <- subset(US,date >="2020-06-01")
+# ggplot(USA) + # geom_line(aes(x=date,y=new_cases,col="Daily new_cases")) +
+#   labs(title="COVID-19 Cases by Date since Jun. 1, 2020",
+#        subtitle = "(7 day rollingmean)") +
+#   geom_line(aes(x=date,y=MAC,col="Rolling Mean")) +
+#    scale_alpha_date()
+#   
+```
+
+```{r}
+# ggplot(USA) + # geom_line(aes(x=date,y=new_deaths,col="Daily new_deaths")) +
+#   labs(title="COVID-19 Deaths by Date (since Jun. 1, 2020)") + ylim(0,200) +
+#   geom_line(aes(x=date,y=MAD,col="Loess")) +
+#    scale_alpha_date()
 ```
 
 #### Non-Moving Average By Week and By Month
@@ -90,6 +102,7 @@ US$Weekly <- as.Date(cut(US$date,
   start.on.monday = FALSE))
 
 ```
+
 ```{r}
 Weekly_new_cases <- aggregate(new_cases~Weekly,US,FUN=sum)
 Weekly_new_deaths <- aggregate(new_deaths~Weekly,US,FUN=sum)
@@ -97,17 +110,17 @@ Weekly_new_cases$DRate <- Weekly_new_deaths$new_deaths/Weekly_new_cases$new_case
 Weekly_new_cases$LivedSaved <- Weekly_new_cases$new_cases * (max(Weekly_new_cases$DRate) - Weekly_new_cases$DRate) 
 
 ```
+
 ```{r}
-ggplot(Weekly_new_cases) + geom_col(aes(x=Weekly,y=new_cases),alpha = 0.5,fill="red") + 
-  labs(title="Weekly new_cases",x="Date date", y="Weekly Cases") +
-    scale_y_continuous(labels = comma)
-
-ggplot(Weekly_new_deaths) + geom_col(aes(x=Weekly,y=new_deaths),alpha = 0.5,fill="blue") + 
-  labs(title="Weekly new_deaths",x="Date date", y="Weekly Deaths") +
+ggplot(Weekly_new_cases) + geom_col(aes(x=Weekly,y=new_cases)) + 
+  labs(title="Weekly Cases ",x="Date date", y="Weekly new_cases") +
    scale_y_continuous(labels = comma)
-  
-``` 
 
+ggplot(Weekly_new_deaths) + geom_col(aes(x=Weekly,y=new_deaths)) + 
+  labs(title="Weekly Deaths",x="Date date", y="Weekly new_deaths") +
+   ylim(0,8000) + 
+  scale_y_continuous(labels = comma)
+```
 
 #### Monthly new_cases and new_deaths
 
@@ -118,13 +131,14 @@ Monthly_new_deaths <- aggregate(new_deaths~Monthly,US,FUN=sum)
 Monthly_new_cases$DRate <- Monthly_new_deaths$new_deaths/Monthly_new_cases$new_cases
 Monthly_new_cases$LivedSaved <- Monthly_new_cases$new_cases * (max(Monthly_new_cases$DRate) - Monthly_new_cases$DRate) * 100
 ```
+
 ```{r}
 ggplot(Monthly_new_cases) + geom_col(aes(x=Monthly,y=new_cases)) +
-  labs(title="Monthly new_cases") +
+  labs(title="Monthly Cases") +
   scale_y_continuous(labels=scales::comma) +
-   scale_alpha_date()
+   scale_y_continuous(labels = comma)
 
 ggplot(Monthly_new_deaths) + geom_col(aes(x=Monthly,y=new_deaths)) +
-  labs(title="Monthly new_deaths") +
-   scale_alpha_date()
+  labs(title="Monthly Deaths") +
+   scale_y_continuous(labels = comma)
 ```
