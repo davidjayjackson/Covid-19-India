@@ -22,7 +22,7 @@ library(forecast)
 theme_set(theme_linedraw())
 ```
 
-## Brazil's Battle with COVID-19
+## India's Battle with COVID-19
 
 ```{r}
 rm(list=ls())
